@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   Platform,
   PermissionsAndroid,
+  Alert,
 } from "react-native";
 import RNFS from "react-native-fs";
 
@@ -22,7 +23,6 @@ import PrintModal from "./PrintModal";
 import EditModal from "./EditModal";
 import { useAlertToast } from "./AlertToast";
 
-// NEW
 import { useGudangAPI } from "hooks/useGudangAPI";
 import { useImagePicker } from "hooks/useImagePicker";
 
@@ -36,15 +36,17 @@ export default function Items({
   index: number;
 }) {
   const { showToast } = useAlertToast();
-  const { replaceImage, loading: apiLoading } = useGudangAPI();
+
+  // Ambil API Hooks termasuk deleteImage
+  const { replaceImage, deleteImage } = useGudangAPI();
 
   const [visible, setVisible] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const [downloading, setDownloading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [deletingImage, setDeletingImage] = useState(false);
 
-  // ⬇️ gunakan hook normal (return value sekarang penting!)
   const { pickFromGallery, pickFromCamera } = useImagePicker();
 
   const imageUrls = [item.img_url1, item.img_url2, item.img_url3].filter(
@@ -83,7 +85,6 @@ export default function Items({
         reader.readAsDataURL(blob);
       });
 
-      // Upload ke server
       const res = await replaceImage({
         uuid: item.uuid,
         old_url: previewUrl!,
@@ -103,40 +104,30 @@ export default function Items({
     }
   };
 
-  // ====================================================================
-  // 🔥 Replace from gallery
-  // ====================================================================
   const handleReplaceFromGallery = async () => {
     try {
-      const picked = await pickFromGallery(false); // return sekarang ada
-
+      const picked = await pickFromGallery(false);
       if (!picked || picked.length === 0) {
         showToast("Error", "Tidak ada file dari galeri");
         return;
       }
-
       await replaceWithFile(picked[0]);
-    } catch (e) {}
+    } catch {}
   };
 
-  // ====================================================================
-  // 🔥 Replace from camera
-  // ====================================================================
   const handleReplaceFromCamera = async () => {
     try {
       const picked = await pickFromCamera();
-
       if (!picked || picked.length === 0) {
         showToast("Error", "Tidak ada file dari kamera");
         return;
       }
-
       await replaceWithFile(picked[0]);
-    } catch (e) {}
+    } catch {}
   };
 
   // ====================================================================
-  // 🔥 Download
+  // 🔥 Download Image
   // ====================================================================
   const handleDownload = async () => {
     try {
@@ -185,11 +176,50 @@ export default function Items({
   };
 
   // ====================================================================
+  // 🔥 DELETE IMAGE
+  // ====================================================================
+  const handleDeleteImage = async () => {
+    if (!previewUrl) return;
+
+    Alert.alert(
+      "Konfirmasi",
+      "Apakah Anda yakin ingin menghapus gambar ini?",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setDeletingImage(true);
+
+              const res = await deleteImage({
+                uuid: item.uuid,
+                url: previewUrl,
+              });
+
+              if (!res?.success) throw new Error(res?.message);
+
+              showToast("Sukses", "Gambar berhasil dihapus");
+
+              setVisible(false);
+              onRefreshPress?.();
+            } catch (err: any) {
+              showToast("Error", err.message || "Gagal menghapus gambar");
+            } finally {
+              setDeletingImage(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // ====================================================================
   // UI Rendering
   // ====================================================================
   return (
     <>
-      {/* ITEM CARD */}
       <Card flex={1} bordered size="$4" m="$2" p="$3">
         <YStack gap="$2">
           <XStack justifyContent="space-between" alignItems="center">
@@ -246,7 +276,7 @@ export default function Items({
       </Card>
 
       {/* =======================================================
-          MODAL PREVIEW
+          IMAGE PREVIEW MODAL
       ======================================================== */}
       <Modal visible={visible} transparent animationType="fade">
         <View
@@ -257,25 +287,24 @@ export default function Items({
             alignItems: "center",
           }}
         >
-          {/* Close button */}
+          {/* Close */}
           <TouchableOpacity
             style={{ position: "absolute", top: 40, right: 20 }}
             onPress={() => {
-              if (!uploadingImage) setVisible(false);
-              else showToast("Info", "Tunggu sampai upload selesai");
+              if (uploadingImage || deletingImage) {
+                showToast("Info", "Tunggu hingga proses selesai...");
+              } else {
+                setVisible(false);
+              }
             }}
           >
             <Text style={{ color: "white", fontSize: 22 }}>✕</Text>
           </TouchableOpacity>
 
-          {/* Image Preview */}
+          {/* Image */}
           {previewUrl ? (
             <FastImage
-              style={{
-                width: "90%",
-                height: "70%",
-                borderRadius: 10,
-              }}
+              style={{ width: "90%", height: "70%", borderRadius: 10 }}
               source={{ uri: previewUrl }}
               resizeMode={FastImage.resizeMode.contain}
             />
@@ -289,7 +318,7 @@ export default function Items({
               size="$4"
               flex={1}
               onPress={handleDownload}
-              disabled={downloading || uploadingImage}
+              disabled={downloading || uploadingImage || deletingImage}
             >
               {downloading ? <Spinner /> : "Download"}
             </Button>
@@ -298,7 +327,7 @@ export default function Items({
               size="$4"
               flex={1}
               onPress={handleReplaceFromGallery}
-              disabled={uploadingImage}
+              disabled={uploadingImage || deletingImage}
             >
               {uploadingImage ? <Spinner /> : "Gallery"}
             </Button>
@@ -307,14 +336,24 @@ export default function Items({
               size="$4"
               flex={1}
               onPress={handleReplaceFromCamera}
-              disabled={uploadingImage}
+              disabled={uploadingImage || deletingImage}
             >
               {uploadingImage ? <Spinner /> : "Camera"}
             </Button>
+
+            <Button
+              size="$4"
+              flex={1}
+              theme="red"
+              onPress={handleDeleteImage}
+              disabled={deletingImage || uploadingImage}
+            >
+              {deletingImage ? <Spinner /> : "Hapus"}
+            </Button>
           </XStack>
 
-          {/* ====================== SIMPLE UPLOADING INDICATOR ====================== */}
-          {uploadingImage && (
+          {/* Uploading Overlay */}
+          {(uploadingImage || deletingImage) && (
             <View
               style={{
                 position: "absolute",
@@ -329,7 +368,7 @@ export default function Items({
             >
               <Spinner size="large" color="white" />
               <Text style={{ color: "white", marginTop: 10 }}>
-                Uploading...
+                {uploadingImage ? "Uploading..." : "Menghapus..."}
               </Text>
             </View>
           )}

@@ -64,6 +64,12 @@ export default function EditModal({ item, onSuccess, index }: EditModalProps) {
     setLatestTagging(item.tagging ?? "");
   }, [item]);
 
+  useEffect(() => {
+    if (!open) {
+      resetImages();
+    }
+  }, [open]);
+
   // =======================
   // 🔥 Helper to convert file → base64
   // =======================
@@ -144,6 +150,7 @@ export default function EditModal({ item, onSuccess, index }: EditModalProps) {
       setOpen(false);
 
     } catch (err: any) {
+      console.error("EditModal - handleSubmit - err:", err);
       showToast("Gagal", err.message || "Error saat update");
     } finally {
       setSubmitting(false);
@@ -272,7 +279,7 @@ export default function EditModal({ item, onSuccess, index }: EditModalProps) {
             )}
           </YStack>
 
-          <Button mt="$3" onPress={handleSubmit} disabled={isBusy}>
+          <Button theme="accent" mt="$3" onPress={handleSubmit} disabled={isBusy}>
             {isBusy ? <Spinner /> : "Submit"}
           </Button>
 

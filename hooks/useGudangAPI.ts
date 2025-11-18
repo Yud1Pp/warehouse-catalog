@@ -1,28 +1,53 @@
 import { useState, useCallback } from "react";
 import { useAlertToast } from "components/AlertToast";
 
-const BASE_URL: string | undefined = process.env.EXPO_PUBLIC_APP_SCRIPT_URL;
+const DEFAULT_URL = process.env.EXPO_PUBLIC_APP_SCRIPT_URL || "";
 
 export function useGudangAPI() {
   const { showToast } = useAlertToast();
+
+  const [apiUrl, setApiUrl] = useState<string>(DEFAULT_URL);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const safeFetch = async (body?: any) => {
+    if (!apiUrl || apiUrl.trim() === "") {
+      return { error: "API URL belum diatur" };
+    }
+
+    const options = body
+      ? {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      : undefined;
+
+    try {
+      const res = await fetch(apiUrl, options);
+
+      if (!res.ok) {
+        return { error: `HTTP ${res.status} - ${res.statusText}` };
+      }
+
+      const json = await res.json();
+      return json;
+    } catch (err: any) {
+      return { error: err.message || "Network request failed" };
+    }
+  };
+
   // =======================================================================
-  // 🔹 Ambil semua data
+  // GET ITEMS
   // =======================================================================
   const fetchItems = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(BASE_URL);
-      const data = await res.json();
+      const data = await safeFetch();
 
-      if (!Array.isArray(data)) {
-        throw new Error("Invalid response format");
-      }
-
+      if (!data || !Array.isArray(data)) throw new Error("Invalid response");
       return data;
     } catch (err) {
       setError(String(err));
@@ -31,154 +56,150 @@ export function useGudangAPI() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiUrl]);
 
   // =======================================================================
-  // 🔹 Tambah data baru
+  // ADD ITEM
   // =======================================================================
-  const addItem = useCallback(async (item: Record<string, any>) => {
-    setLoading(true);
-    setError(null);
+  const addItem = useCallback(
+    async (item: Record<string, any>) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const res = await fetch(BASE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "add", ...item }),
-      });
+      try {
+        const json = await safeFetch({ action: "add", ...item });
 
-      const json = await res.json();
+        if (!json?.success) throw new Error(json?.message);
+        showToast("Sukses", "Data berhasil ditambahkan");
 
-      if (!json.success) throw new Error(json.message);
-
-      showToast("Sukses", "Data berhasil ditambahkan");
-      return json;
-    } catch (err) {
-      showToast("Gagal", "Tidak dapat menambahkan data");
-      setError(String(err));
-      return { success: false, message: String(err) };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        return json;
+      } catch (err) {
+        showToast("Gagal", "Tidak dapat menambahkan data");
+        setError(String(err));
+        return { success: false, message: String(err) };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiUrl]
+  );
 
   // =======================================================================
-  // 🔹 Edit data (desc, lokasi, dsb.) 
+  // EDIT ITEM
   // =======================================================================
-  const editItem = useCallback(async (payload: {
-    uuid: string;
-    tagging?: string;
-    desc?: string;
-    original_location?: string;
-    current_location?: string;
-  }) => {
-    setLoading(true);
-    setError(null);
+  const editItem = useCallback(
+    async (payload: any) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const res = await fetch(BASE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "edit",
-          ...payload,
-        }),
-      });
+      try {
+        const json = await safeFetch({ action: "edit", ...payload });
 
-      const json = await res.json();
+        if (!json?.success) throw new Error(json?.message);
+        showToast("Sukses", "Data berhasil diperbarui");
 
-      if (!json.success) throw new Error(json.message);
-
-      showToast("Sukses", "Data berhasil diperbarui");
-      return json;
-    } catch (err) {
-      setError(String(err));
-      showToast("Error", "Gagal memperbarui data");
-      return { success: false, message: String(err) };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        return json;
+      } catch (err) {
+        showToast("Error", "Gagal memperbarui data");
+        setError(String(err));
+        return { success: false, message: String(err) };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiUrl]
+  );
 
   // =======================================================================
-  // 🔹 Upload gambar baru
+  // UPLOAD IMAGE
   // =======================================================================
-  const uploadImage = useCallback(async (payload: {
-    uuid: string;
-    files: { fileName: string; mimeType: string; file: string }[];
-  }) => {
-    setLoading(true);
-    setError(null);
+  const uploadImage = useCallback(
+    async (payload: any) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const res = await fetch(BASE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "uploadImage",
-          ...payload,
-        }),
-      });
+      try {
+        const json = await safeFetch({ action: "uploadImage", ...payload });
 
-      const json = await res.json();
+        if (!json?.success) throw new Error(json?.message);
+        showToast("Sukses", "Gambar berhasil diupload");
 
-      if (!json.success) throw new Error(json.message);
-
-      showToast("Sukses", "Gambar berhasil diupload");
-      return json;
-    } catch (err) {
-      setError(String(err));
-      showToast("Error", "Gagal mengupload gambar");
-      return { success: false, message: String(err) };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        return json;
+      } catch (err) {
+        showToast("Error", "Gagal mengupload gambar");
+        setError(String(err));
+        return { success: false, message: String(err) };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiUrl]
+  );
 
   // =======================================================================
-  // 🔹 Replace satu gambar → berdasarkan old_url & file baru
+  // REPLACE IMAGE
   // =======================================================================
-  const replaceImage = useCallback(async (payload: {
-    uuid: string;
-    old_url: string;
-    file: { fileName: string; mimeType: string; file: string };
-  }) => {
-    setLoading(true);
-    setError(null);
+  const replaceImage = useCallback(
+    async (payload: any) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const res = await fetch(BASE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "replaceImage",
-          ...payload,
-        }),
-      });
+      try {
+        const json = await safeFetch({ action: "replaceImage", ...payload });
 
-      const json = await res.json();
+        if (!json?.success) throw new Error(json?.message);
+        showToast("Sukses", "Gambar berhasil diganti");
 
-      if (!json.success) throw new Error(json.message);
+        return json;
+      } catch (err) {
+        showToast("Error", "Gagal mengganti gambar");
+        setError(String(err));
+        return { success: false, message: String(err) };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiUrl]
+  );
 
-      showToast("Sukses", "Gambar berhasil diganti");
-      return json;
-    } catch (err) {
-      setError(String(err));
-      showToast("Error", "Gagal mengganti gambar");
-      return { success: false, message: String(err) };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // =======================================================================
+  // DELETE IMAGE
+  // =======================================================================
+  const deleteImage = useCallback(
+    async (payload: { uuid: string; url: string }) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const json = await safeFetch({ action: "deleteImage", ...payload });
+
+        if (!json?.success) throw new Error(json?.message);
+
+        showToast("Sukses", "Gambar berhasil dihapus");
+
+        return json;
+      } catch (err) {
+        showToast("Error", "Gagal menghapus gambar");
+        setError(String(err));
+        return { success: false, message: String(err) };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiUrl]
+  );
 
   return {
     loading,
     error,
+    apiUrl,
+    setApiUrl,
 
     fetchItems,
     addItem,
     editItem,
     uploadImage,
-    replaceImage, // ⬅️ tambahkan di sini!
+    replaceImage,
+    deleteImage, // ← TAMBAHKAN DI EXPORT
   };
 }

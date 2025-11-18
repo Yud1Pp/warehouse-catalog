@@ -123,7 +123,6 @@ export function useImagePicker(): UseImagePickerResult {
   const resetImages = () => {
     setFiles([]);
     setPreviewUris([]);
-    showToast("Reset", "Gambar berhasil dihapus");
   };
 
   return {

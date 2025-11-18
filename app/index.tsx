@@ -28,7 +28,12 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
 
   const { exportToExcel } = useExcelExport()
-  const { fetchItems, loading } = useGudangAPI()
+  const { fetchItems, loading, setApiUrl, apiUrl } = useGudangAPI();
+
+  useEffect(() => {
+    if (!apiUrl) return;
+    handleRefresh();
+  }, [apiUrl]);
 
   // ============================================================
   // 🔥 Search Logic - DIPISAH sebagai reusable function
@@ -85,13 +90,28 @@ export default function Home() {
   // ============================================================
   const handleRefresh = async () => {
     const data = await fetchItems()
-    if (!data) return
+    if (!data) {
+      console.log('Refreshed data:', data)
+      showToast("Gagal", "Tidak dapat memperbarui data")
+      setItems([])
+      setFilteredItems([])
+      return false;
+    } else {
+      console.log('ada data')
+      setItems(data)
+      setFilteredItems(applyFilter(data, searchQuery))
 
-    setItems(data)
-    setFilteredItems(applyFilter(data, searchQuery))
-
-    showToast("Sukses", "Data Diperbarui")
+      showToast("Sukses", "Data Diperbarui")
+      return true;
+    }
   }
+
+  const handleChangeApiUrl = async (newUrl: string) => {
+    setApiUrl(newUrl.trim());
+    showToast("Sukses", "API URL berhasil diganti");
+
+    return true;
+  };
 
   // ============================================================
   // 🔥 Scanner — otomatis mengisi search & filter
@@ -135,6 +155,7 @@ export default function Home() {
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             onSearchPress={handleSearchPress}
+            onChangeApiUrl={handleChangeApiUrl}
           />
 
           <YStack flex={1}>

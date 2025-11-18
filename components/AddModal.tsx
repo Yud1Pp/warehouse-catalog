@@ -140,7 +140,7 @@ export default function AddModal({ onSuccess }: { onSuccess?: () => void }) {
             </Fieldset>
           </YStack>
 
-          <Button mt="$3" onPress={handleSubmit} disabled={loading}>
+          <Button theme="accent" mt="$3" onPress={handleSubmit} disabled={loading}>
             {loading ? <Spinner /> : "Submit"}
           </Button>
 
