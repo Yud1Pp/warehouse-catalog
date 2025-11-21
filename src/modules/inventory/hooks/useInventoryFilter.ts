@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { Item } from "../types/item.types";
 
 export function useInventoryFilter() {
   /**
@@ -6,7 +7,7 @@ export function useInventoryFilter() {
    * Melakukan pencarian berdasarkan query (case-insensitive)
    */
   const applyFilter = useCallback(
-    (dataset: any[], query: string) => {
+    (dataset: Item[], query: string) => {
       if (!dataset || dataset.length === 0) return [];
 
       const term = query?.toLowerCase() ?? "";

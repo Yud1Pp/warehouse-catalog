@@ -3,15 +3,12 @@ import { ChevronDown, ChevronUp } from '@tamagui/lucide-icons'
 import { StyleSheet, Pressable } from 'react-native'
 import SelectDropdown from 'react-native-select-dropdown'
 
-interface BTDevice {
-  name: string
-  address: string
-}
+import { BluetoothDevice } from 'src/modules/inventory/types/bluetooth-device.types'
 
 interface Props {
-  devices: BTDevice[]
-  selectedDevice: BTDevice | null
-  setSelectedDevice: (device: BTDevice) => void
+  devices: BluetoothDevice[]
+  selectedDevice: BluetoothDevice | null
+  setSelectedDevice: (device: BluetoothDevice) => void
   setConnectionStatus: (status: 'idle' | 'loading' | 'success' | 'error') => void
   onEmptyDevices?: () => void
 }

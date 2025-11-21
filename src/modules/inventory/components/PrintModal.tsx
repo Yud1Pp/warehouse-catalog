@@ -20,13 +20,14 @@ import { BluetoothManager, BluetoothTscPrinter } from '@brooons/react-native-blu
 import SelectDevices from 'src/modules/bluetooth/components/SelectDevices'
 import QRCode from 'react-native-qrcode-svg'
 import { useAlertToast } from 'src/shared/components/AlertToast'
+import { Item } from '../types/item.types'
 
 interface BTDevice {
   name: string
   address: string
 }
 
-export default function PrintModal({ item }: { item?: Record<string, any> }) {
+export default function PrintModal({ item }: { item?: Item }) {
   if (!item) return null
 
   const [devices, setDevices] = useState<BTDevice[]>([])

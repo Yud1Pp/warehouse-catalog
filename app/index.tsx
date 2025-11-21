@@ -9,17 +9,7 @@ import { useExcelExport } from 'src/modules/inventory/utils/excel'
 import { useGudangAPI } from 'src/modules/inventory/services'
 import { useAlertToast } from 'src/shared/components/AlertToast'
 import { useInventoryFilter } from "src/modules/inventory/hooks/useInventoryFilter";
-
-interface Item {
-  uuid: string
-  tagging: string
-  desc: string
-  original_location: string
-  current_location: string
-  img_url1: string
-  img_url2: string
-  img_url3: string
-}
+import { Item } from "src/modules/inventory/types/item.types"
 
 export default function Home() {
   const { showToast } = useAlertToast()

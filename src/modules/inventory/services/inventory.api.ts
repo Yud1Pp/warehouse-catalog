@@ -1,6 +1,23 @@
 import { useState, useCallback } from "react";
 import { useAlertToast } from "src/shared/components/AlertToast";
 
+// ITEM MODEL
+import { Item } from "../types/item.types";
+
+// API TYPES
+import {
+  AddItemPayload,
+  AddItemResponse,
+  EditItemPayload,
+  EditItemResponse,
+  UploadImagePayload,
+  UploadImageResponse,
+  ReplaceImagePayload,
+  ReplaceImageResponse,
+  DeleteImagePayload,
+  DeleteImageResponse,
+} from "../types/api.types";
+
 const DEFAULT_URL = process.env.EXPO_PUBLIC_APP_SCRIPT_URL || "";
 
 export function useGudangAPI() {
@@ -10,7 +27,10 @@ export function useGudangAPI() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const safeFetch = async (body?: any) => {
+  // ============================================================
+  // SAFE FETCH WRAPPER
+  // ============================================================
+  const safeFetch = async (body?: any): Promise<any> => {
     if (!apiUrl || apiUrl.trim() === "") {
       return { error: "API URL belum diatur" };
     }
@@ -31,16 +51,40 @@ export function useGudangAPI() {
       }
 
       const json = await res.json();
+
+      if (options) {
+        console.log("API Request Body:", body);
+        console.log("API Response:", json);
+      }
+
       return json;
     } catch (err: any) {
       return { error: err.message || "Network request failed" };
     }
   };
 
-  // =======================================================================
-  // GET ITEMS
-  // =======================================================================
-  const fetchItems = useCallback(async () => {
+  // Convert raw API item → Item type
+  const mapItem = (raw: any): Item => {
+    const images = [
+      raw.img_url1 ? { url: raw.img_url1, index: 1 } : null,
+      raw.img_url2 ? { url: raw.img_url2, index: 2 } : null,
+      raw.img_url3 ? { url: raw.img_url3, index: 3 } : null,
+    ].filter(Boolean) as { url: string; index: number }[];
+
+    return {
+      uuid: raw.uuid,
+      tagging: raw.tagging,
+      desc: raw.desc,
+      original_location: raw.original_location,
+      current_location: raw.current_location,
+      images,
+    };
+  };
+
+  // ============================================================
+  // FETCH ITEMS
+  // ============================================================
+  const fetchItems = useCallback(async (): Promise<Item[] | null> => {
     setLoading(true);
     setError(null);
 
@@ -48,7 +92,12 @@ export function useGudangAPI() {
       const data = await safeFetch();
 
       if (!data || !Array.isArray(data)) throw new Error("Invalid response");
-      return data;
+
+      const items: Item[] = data
+        .filter((x: any) => x && x.uuid)
+        .map((x: any) => mapItem(x));
+
+      return items;
     } catch (err) {
       setError(String(err));
       showToast("Error", "Gagal mengambil data");
@@ -58,25 +107,26 @@ export function useGudangAPI() {
     }
   }, [apiUrl]);
 
-  // =======================================================================
+  // ============================================================
   // ADD ITEM
-  // =======================================================================
+  // ============================================================
   const addItem = useCallback(
-    async (item: Record<string, any>) => {
+    async (payload: AddItemPayload): Promise<AddItemResponse> => {
       setLoading(true);
       setError(null);
 
       try {
-        const json = await safeFetch({ action: "add", ...item });
+        const json = await safeFetch({ action: "add", ...payload });
 
         if (!json?.success) throw new Error(json?.message);
         showToast("Sukses", "Data berhasil ditambahkan");
 
-        return json;
+        return json as AddItemResponse;
       } catch (err) {
+        const msg = String(err);
         showToast("Gagal", "Tidak dapat menambahkan data");
-        setError(String(err));
-        return { success: false, message: String(err) };
+        setError(msg);
+        return { success: false, message: msg };
       } finally {
         setLoading(false);
       }
@@ -84,11 +134,11 @@ export function useGudangAPI() {
     [apiUrl]
   );
 
-  // =======================================================================
+  // ============================================================
   // EDIT ITEM
-  // =======================================================================
+  // ============================================================
   const editItem = useCallback(
-    async (payload: any) => {
+    async (payload: EditItemPayload): Promise<EditItemResponse> => {
       setLoading(true);
       setError(null);
 
@@ -98,11 +148,12 @@ export function useGudangAPI() {
         if (!json?.success) throw new Error(json?.message);
         showToast("Sukses", "Data berhasil diperbarui");
 
-        return json;
+        return json as EditItemResponse;
       } catch (err) {
+        const msg = String(err);
         showToast("Error", "Gagal memperbarui data");
-        setError(String(err));
-        return { success: false, message: String(err) };
+        setError(msg);
+        return { success: false, message: msg };
       } finally {
         setLoading(false);
       }
@@ -110,25 +161,29 @@ export function useGudangAPI() {
     [apiUrl]
   );
 
-  // =======================================================================
+  // ============================================================
   // UPLOAD IMAGE
-  // =======================================================================
+  // ============================================================
   const uploadImage = useCallback(
-    async (payload: any) => {
+    async (payload: UploadImagePayload): Promise<UploadImageResponse> => {
       setLoading(true);
       setError(null);
 
       try {
-        const json = await safeFetch({ action: "uploadImage", ...payload });
+        const json = await safeFetch({
+          action: "uploadImage",
+          ...payload,
+        });
 
         if (!json?.success) throw new Error(json?.message);
         showToast("Sukses", "Gambar berhasil diupload");
 
-        return json;
+        return json as UploadImageResponse;
       } catch (err) {
+        const msg = String(err);
         showToast("Error", "Gagal mengupload gambar");
-        setError(String(err));
-        return { success: false, message: String(err) };
+        setError(msg);
+        return { success: false, message: msg };
       } finally {
         setLoading(false);
       }
@@ -136,25 +191,29 @@ export function useGudangAPI() {
     [apiUrl]
   );
 
-  // =======================================================================
+  // ============================================================
   // REPLACE IMAGE
-  // =======================================================================
+  // ============================================================
   const replaceImage = useCallback(
-    async (payload: any) => {
+    async (payload: ReplaceImagePayload): Promise<ReplaceImageResponse> => {
       setLoading(true);
       setError(null);
 
       try {
-        const json = await safeFetch({ action: "replaceImage", ...payload });
+        const json = await safeFetch({
+          action: "replaceImage",
+          ...payload,
+        });
 
         if (!json?.success) throw new Error(json?.message);
         showToast("Sukses", "Gambar berhasil diganti");
 
-        return json;
+        return json as ReplaceImageResponse;
       } catch (err) {
+        const msg = String(err);
         showToast("Error", "Gagal mengganti gambar");
-        setError(String(err));
-        return { success: false, message: String(err) };
+        setError(msg);
+        return { success: false, message: msg };
       } finally {
         setLoading(false);
       }
@@ -162,26 +221,29 @@ export function useGudangAPI() {
     [apiUrl]
   );
 
-  // =======================================================================
+  // ============================================================
   // DELETE IMAGE
-  // =======================================================================
+  // ============================================================
   const deleteImage = useCallback(
-    async (payload: { uuid: string; url: string }) => {
+    async (payload: DeleteImagePayload): Promise<DeleteImageResponse> => {
       setLoading(true);
       setError(null);
 
       try {
-        const json = await safeFetch({ action: "deleteImage", ...payload });
+        const json = await safeFetch({
+          action: "deleteImage",
+          ...payload,
+        });
 
         if (!json?.success) throw new Error(json?.message);
-
         showToast("Sukses", "Gambar berhasil dihapus");
 
-        return json;
+        return json as DeleteImageResponse;
       } catch (err) {
+        const msg = String(err);
         showToast("Error", "Gagal menghapus gambar");
-        setError(String(err));
-        return { success: false, message: String(err) };
+        setError(msg);
+        return { success: false, message: msg };
       } finally {
         setLoading(false);
       }
@@ -200,6 +262,6 @@ export function useGudangAPI() {
     editItem,
     uploadImage,
     replaceImage,
-    deleteImage, // ← TAMBAHKAN DI EXPORT
+    deleteImage,
   };
 }

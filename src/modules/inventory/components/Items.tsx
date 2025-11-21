@@ -1,131 +1,141 @@
-import { useState } from 'react';
+// Items.tsx
+import { useState } from 'react'
 import {
   XStack,
   Text,
   YStack,
-  Button,
-  Spinner,
   Card,
   Separator,
-} from 'tamagui';
-import FastImage from '@d11/react-native-fast-image';
+} from 'tamagui'
+import FastImage from '@d11/react-native-fast-image'
 import {
-  View,
   TouchableOpacity,
   Platform,
   PermissionsAndroid,
   Alert,
-} from 'react-native';
-import RNFS from 'react-native-fs';
+} from 'react-native'
+import RNFS from 'react-native-fs'
 
-import PrintModal from './PrintModal';
-import EditModal from './EditModal';
-import { useAlertToast } from 'src/shared/components/AlertToast';
-import { useGudangAPI } from 'src/modules/inventory/services/inventory.api';
+import PrintModal from './PrintModal'
+import EditModal from './EditModal'
 
-// HOOK UNTUK UPLOAD GAMBAR (POINT 4)
-import { useImageUpload } from 'src/modules/media/hooks/useImageUpload';
-import ImagePreviewModal from 'src/modules/media/components/ImagePreviewModal';
-import React from 'react';
+import { useAlertToast } from 'src/shared/components/AlertToast'
+import { useGudangAPI } from 'src/modules/inventory/services/inventory.api'
+
+import { useImageUpload } from 'src/modules/media/hooks/useImageUpload'
+import ImagePreviewModal from 'src/modules/media/components/ImagePreviewModal'
+
+import { Item } from '../types/item.types'
+import { ReplaceImagePayload } from '../types/api.types'
+import React from 'react'
 
 function Items({
   item,
   onRefreshPress,
   index,
 }: {
-  item: Record<string, any>;
-  onRefreshPress?: () => void;
-  index: number;
+  item: Item
+  onRefreshPress?: () => void
+  index: number
 }) {
-  const { showToast } = useAlertToast();
-  const { replaceImage, deleteImage } = useGudangAPI();
+  const { showToast } = useAlertToast()
+  const { replaceImage, deleteImage } = useGudangAPI()
 
-  const { openGallery, openCamera } = useImageUpload();   // ← gunakan hook baru
+  const { openGallery, openCamera } = useImageUpload()
 
-  const [visible, setVisible] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [visible, setVisible] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
-  const [downloading, setDownloading] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [deletingImage, setDeletingImage] = useState(false);
+  const [downloading, setDownloading] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [deletingImage, setDeletingImage] = useState(false)
 
-  const imageUrls = [item.img_url1, item.img_url2, item.img_url3].filter(
-    (url) => typeof url === 'string' && url.startsWith('http')
-  );
+  const imageUrls = item.images.map(img => img.url)
 
   const handleImagePress = (url: string) => {
-    setPreviewUrl(url);
-    setVisible(true);
-  };
+    setPreviewUrl(url)
+    setVisible(true)
+  }
 
-  // ====================================================================
-  // 🔥 Replace image
-  // ====================================================================
+  // ============================================================
+  // 🔥 Replace Image
+  // ============================================================
   const handleReplaceFromGallery = async () => {
     try {
-      const files = await openGallery(false); // pilih file asli (tanpa base64)
+      const files = await openGallery({
+        multi: false,
+        convertBase64: true,
+      })
+
       if (!files || files.length === 0) {
-        showToast('Error', 'Tidak ada file dari galeri');
-        return;
+        showToast('Error', 'Tidak ada file dari galeri')
+        return
       }
-      await replaceWithBase64(files[0]);
+
+      await replaceWithBase64(files[0])
     } catch {}
-  };
+  }
 
   const handleReplaceFromCamera = async () => {
     try {
-      const files = await openCamera(); // hasil camera langsung base64
-      if (!files || files.length === 0) {
-        showToast('Error', 'Tidak ada file dari kamera');
-        return;
-      }
-      await replaceWithBase64(files[0]);
-    } catch {}
-  };
+      const files = await openCamera({
+        convertBase64: true,
+      })
 
-  // Convert + upload
+      if (!files || files.length === 0) {
+        showToast('Error', 'Tidak ada foto dari kamera')
+        return
+      }
+
+      await replaceWithBase64(files[0])
+    } catch {}
+  }
+
   const replaceWithBase64 = async (file: any) => {
     try {
       if (!previewUrl) {
-        showToast('Error', 'Gambar tidak valid.');
-        return;
+        showToast('Error', 'Gambar tidak valid.')
+        return
       }
 
-      setUploadingImage(true);
+      setUploadingImage(true)
 
-      const res = await replaceImage({
+      // file sudah dalam bentuk base64, hasil dari useImageUpload
+      const payload: ReplaceImagePayload = {
         uuid: item.uuid,
         old_url: previewUrl,
-        file, // sudah base64 (openCamera) atau raw file (openGallery(false))
-      });
+        file,
+      }
 
-      if (!res?.success) throw new Error(res?.message);
+      const res = await replaceImage(payload)
 
-      showToast('Sukses', 'Gambar berhasil diganti');
-      setVisible(false);
-      onRefreshPress?.();
+      if (!res?.success) throw new Error(res?.message)
+
+      showToast('Sukses', 'Gambar berhasil diganti')
+      setVisible(false)
+      onRefreshPress?.()
     } catch (err: any) {
-      showToast('Gagal', err.message || 'Tidak dapat mengganti gambar');
+      showToast('Gagal', err.message || 'Tidak dapat mengganti gambar')
     } finally {
-      setUploadingImage(false);
+      setUploadingImage(false)
     }
-  };
+  }
 
-  // ====================================================================
+  // ============================================================
   // 🔥 Download
-  // ====================================================================
+  // ============================================================
   const handleDownload = async () => {
     try {
       if (!previewUrl)
-        return showToast('Tidak ada gambar', 'Tidak ada gambar yang dapat diunduh.');
+        return showToast('Tidak ada gambar', 'Tidak ada gambar untuk diunduh.')
 
-      setDownloading(true);
+      setDownloading(true)
 
-      const filename = item.tagging?.replace(/\s+/g, '_') || 'image_download';
+      const filename = item.tagging?.replace(/\s+/g, '_') || 'image_download'
       const filePath =
         Platform.OS === 'android'
           ? `${RNFS.DownloadDirectoryPath}/${filename}.jpg`
-          : `${RNFS.DocumentDirectoryPath}/${filename}.jpg`;
+          : `${RNFS.DocumentDirectoryPath}/${filename}.jpg`
 
       if (Platform.OS === 'android') {
         const granted = await PermissionsAndroid.request(
@@ -135,37 +145,38 @@ function Items({
             message: 'Aplikasi perlu izin untuk menyimpan gambar.',
             buttonPositive: 'Izinkan',
           }
-        );
+        )
 
         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          showToast('Akses ditolak', 'Tidak dapat menyimpan gambar.');
-          return;
+          showToast('Akses ditolak', 'Tidak dapat menyimpan gambar.')
+          return
         }
       }
 
       const result = await RNFS.downloadFile({
         fromUrl: previewUrl,
         toFile: filePath,
-      }).promise;
+      }).promise
 
-      setVisible(false);
+      setVisible(false)
+
       if (result.statusCode === 200) {
-        showToast('Berhasil', `Gambar disimpan di: ${filePath}`);
+        showToast('Berhasil', `Gambar disimpan di: ${filePath}`)
       } else {
-        showToast('Gagal', 'Tidak dapat mengunduh gambar.');
+        showToast('Gagal', 'Gagal mengunduh gambar.')
       }
     } catch {
-      showToast('Error', 'Terjadi kesalahan saat mengunduh gambar.');
+      showToast('Error', 'Terjadi kesalahan saat mengunduh gambar.')
     } finally {
-      setDownloading(false);
+      setDownloading(false)
     }
-  };
+  }
 
-  // ====================================================================
+  // ============================================================
   // 🔥 Delete
-  // ====================================================================
+  // ============================================================
   const handleDeleteImage = async () => {
-    if (!previewUrl) return;
+    if (!previewUrl) return
 
     Alert.alert(
       'Konfirmasi',
@@ -177,33 +188,29 @@ function Items({
           style: 'destructive',
           onPress: async () => {
             try {
-              setDeletingImage(true);
+              setDeletingImage(true)
 
               const res = await deleteImage({
                 uuid: item.uuid,
                 url: previewUrl,
-              });
+              })
 
-              if (!res?.success) throw new Error(res?.message);
+              if (!res?.success) throw new Error(res?.message)
 
-              showToast('Sukses', 'Gambar berhasil dihapus');
-
-              setVisible(false);
-              onRefreshPress?.();
+              showToast('Sukses', 'Gambar berhasil dihapus')
+              setVisible(false)
+              onRefreshPress?.()
             } catch (err: any) {
-              showToast('Error', err.message || 'Gagal menghapus gambar');
+              showToast('Error', err.message || 'Gagal menghapus gambar')
             } finally {
-              setDeletingImage(false);
+              setDeletingImage(false)
             }
           },
         },
       ]
-    );
-  };
+    )
+  }
 
-  // ====================================================================
-  // UI
-  // ====================================================================
   return (
     <>
       <Card flex={1} bordered size="$4" m="$2" p="$3">
@@ -257,7 +264,6 @@ function Items({
         </YStack>
       </Card>
 
-      {/* IMAGE PREVIEW MODAL */}
       <ImagePreviewModal
         visible={visible}
         url={previewUrl}
@@ -271,7 +277,7 @@ function Items({
         loadingDownload={downloading}
       />
     </>
-  );
+  )
 }
 
-export default React.memo(Items);
+export default React.memo(Items)

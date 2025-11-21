@@ -1,4 +1,4 @@
-import { Plus, X } from '@tamagui/lucide-icons';
+import { Plus, X } from '@tamagui/lucide-icons'
 import {
   Button,
   Dialog,
@@ -9,155 +9,159 @@ import {
   Fieldset,
   Input,
   Label,
-} from 'tamagui';
-import { useState } from 'react';
-import { useGudangAPI } from 'src/modules/inventory/services/inventory.api';
-import { useAlertToast } from 'src/shared/components/AlertToast';
+} from 'tamagui'
+import { useState } from 'react'
+
+import { useGudangAPI } from 'src/modules/inventory/services/inventory.api'
+import { useAlertToast } from 'src/shared/components/AlertToast'
+
+// TYPED PAYLOAD
+import { AddItemPayload } from '../types/api.types'
 
 export default function AddModal({ onSuccess }: { onSuccess?: () => void }) {
-  const [open, setOpen] = useState(false);
-  const { addItem, loading } = useGudangAPI();
-  const { showToast } = useAlertToast();
+  const [open, setOpen] = useState(false)
+  const { addItem, loading } = useGudangAPI()
+  const { showToast } = useAlertToast()
 
-  const [tag, setTag] = useState('');
-  const [desc, setDesc] = useState('');
-  const [originalLocation, setOriginalLocation] = useState('');
-  const [currentLocation, setCurrentLocation] = useState('');
+  const [tag, setTag] = useState('')
+  const [desc, setDesc] = useState('')
+  const [originalLocation, setOriginalLocation] = useState('')
+  const [currentLocation, setCurrentLocation] = useState('')
+
+  const resetForm = () => {
+    setTag('')
+    setDesc('')
+    setOriginalLocation('')
+    setCurrentLocation('')
+  }
 
   const handleSubmit = async () => {
-    if (loading) return;
+    if (loading) return
 
-    if (!tag || !desc || !originalLocation) {
-      showToast('Peringatan', 'Tag, Deskripsi, dan Original Location wajib diisi!');
-      return;
+    if (!tag.trim() || !desc.trim() || !originalLocation.trim()) {
+      showToast('Peringatan', 'Tag, Deskripsi, dan Original Location wajib diisi!')
+      return
     }
 
     try {
-      const result = await addItem({
-        tagging: tag,
-        desc,
-        original_location: originalLocation,
-        current_location: currentLocation || '',
-      });
+      const payload: AddItemPayload = {
+        tagging: tag.trim(),
+        desc: desc.trim(),
+        original_location: originalLocation.trim(),
+        current_location: currentLocation.trim() || '',
+      }
+
+      const result = await addItem(payload)
 
       if (result?.success) {
-        setOpen(false);
-        onSuccess?.();
-        setTag('');
-        setDesc('');
-        setOriginalLocation('');
-        setCurrentLocation('');
+        showToast('Sukses', 'Data berhasil ditambahkan.')
+
+        resetForm()
+        onSuccess?.()
+        setOpen(false)
       }
-    } catch {}
-  };
+    } catch (err) {
+      showToast('Error', 'Terjadi kesalahan saat menambahkan data')
+    }
+  }
 
   return (
     <Dialog modal open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
         <Button
-          size='$4'
+          size="$4"
           flex={1}
           onPress={() => setOpen(true)}
-          icon={<Plus size='$1' />}
+          icon={<Plus size="$1" />}
         >
           Add
         </Button>
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <Dialog.Overlay
-          key='overlay'
-          bg='$shadow6'
-          animation='bouncy'
-          enterStyle={{ opacity: 0 }}
-          exitStyle={{ opacity: 0 }}
-          opacity={1}
-        />
+        <Dialog.Overlay bg="$shadow6" />
 
         <Dialog.Content
-          key='content'
-          animation={['quickest', { damping: 3, mass: 0.1, stiffness: 100 }]}
-          enterStyle={{ opacity: 0, scale: 0.95, y: 10 }}
-          exitStyle={{ opacity: 0, scale: 0.97, y: 10 }}
-          opacity={1}
-          scale={1}
-          y={0}
+          animation={['quickest', { damping: 3, stiffness: 100 }]}
           elevate
           bordered
-          width='90%'
+          width="90%"
           maxWidth={800}
-          p='$4'
-          borderRadius='$6'
-          backgroundColor='$background'
+          p="$4"
+          borderRadius="$6"
+          backgroundColor="$background"
         >
           <Dialog.Title>
-            <Text>Add Data</Text>
+            <Text fontWeight="700">Add Data</Text>
           </Dialog.Title>
 
           <Dialog.Description>
             Isi data dengan lengkap, lalu tekan submit.
           </Dialog.Description>
 
-          <YStack gap='$2' py='$2'>
-            <Fieldset horizontal alignItems='center'>
-              <Label fontWeight='700' width={120}>Tag*</Label>
+          <YStack gap="$2" py="$2">
+
+            <Fieldset horizontal alignItems="center">
+              <Label width={140}>Tag *</Label>
               <Input
                 flex={1}
-                placeholder='Masukan tag'
                 value={tag}
+                placeholder="Masukan tag"
                 onChangeText={setTag}
               />
             </Fieldset>
 
-            <Fieldset horizontal alignItems='center'>
-              <Label fontWeight='700' width={120}>Desc*</Label>
+            <Fieldset horizontal alignItems="center">
+              <Label width={140}>Desc *</Label>
               <Input
                 flex={1}
-                placeholder='Masukan deskripsi'
                 value={desc}
+                placeholder="Masukan deskripsi"
                 onChangeText={setDesc}
               />
             </Fieldset>
 
-            <Fieldset horizontal alignItems='center'>
-              <Label fontWeight='700' width={120}>Original Location*</Label>
+            <Fieldset horizontal alignItems="center">
+              <Label width={140}>Original Location *</Label>
               <Input
                 flex={1}
-                placeholder='Masukan original location'
                 value={originalLocation}
+                placeholder="Masukan original location"
                 onChangeText={setOriginalLocation}
               />
             </Fieldset>
 
-            <Fieldset horizontal alignItems='center'>
-              <Label fontWeight='700' width={120}>Current Location</Label>
+            <Fieldset horizontal alignItems="center">
+              <Label width={140}>Current Location</Label>
               <Input
                 flex={1}
-                placeholder='Masukan current location (opsional)'
                 value={currentLocation}
+                placeholder="Opsional"
                 onChangeText={setCurrentLocation}
               />
             </Fieldset>
+
           </YStack>
 
-          <Button theme='accent' mt='$3' onPress={handleSubmit} disabled={loading}>
+          <Button theme="accent" mt="$3" onPress={handleSubmit} disabled={loading}>
             {loading ? <Spinner /> : 'Submit'}
           </Button>
 
           <Unspaced>
             <Button
-              bg='transparent'
-              position='absolute'
-              r='$3'
-              t='$3'
-              size='$3'
+              bg="transparent"
+              position="absolute"
+              top="$3"
+              right="$3"
+              size="$3"
               circular
-              icon={<X size='$1' />}
+              icon={<X size="$1" />}
               onPress={() => setOpen(false)}
             />
           </Unspaced>
+
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog>
-  );
+  )
 }

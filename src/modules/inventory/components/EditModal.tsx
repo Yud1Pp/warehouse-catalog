@@ -13,33 +13,33 @@ import {
   Image,
 } from 'tamagui'
 import { useState, useEffect } from 'react'
+
 import { useGudangAPI } from 'src/modules/inventory/services/inventory.api'
 import { useAlertToast } from 'src/shared/components/AlertToast'
 
-// PREVIEW PICKER
 import { useImagePicker } from 'src/modules/media/hooks/useImagePicker'
-
-// BASE64 CONVERTER
 import { convertPickedImages } from 'src/modules/media/utils/imageUpload'
 
-// DIFF UTILS (POINT 6)
 import { isItemUpdated, hasImageChanged } from 'src/modules/inventory/utils/diff'
 
+import { Item } from '../types/item.types'
+import { EditItemPayload, UploadImagePayload } from '../types/api.types'
+
 interface EditModalProps {
-  item?: Record<string, any>
+  item?: Item
   onSuccess?: () => void
   index: number
 }
 
-export default function EditModal({ item, onSuccess, index }: EditModalProps) {
+export default function EditModal({ item, onSuccess }: EditModalProps) {
   const [open, setOpen] = useState(false)
 
+  // FORM STATE
   const [latestDesc, setLatestDesc] = useState('')
   const [originLocation, setOriginLocation] = useState('')
   const [currentLocation, setCurrentLocation] = useState('')
   const [latestTagging, setLatestTagging] = useState('')
 
-  // PREVIEW PICKER
   const {
     files,
     previewUris,
@@ -55,17 +55,15 @@ export default function EditModal({ item, onSuccess, index }: EditModalProps) {
   const [submitting, setSubmitting] = useState(false)
   const isBusy = submitting || apiLoading || picking
 
-  // SYNC FIELD DENGAN ITEM
+  // SYNC VALUE DARI ITEM
   useEffect(() => {
     if (!item) return
-
     setLatestDesc(item.desc ?? '')
     setOriginLocation(item.original_location ?? '')
     setCurrentLocation(item.current_location ?? '')
     setLatestTagging(item.tagging ?? '')
   }, [item])
 
-  // RESET IMAGES WHEN MODAL CLOSED
   useEffect(() => {
     if (!open) resetImages()
   }, [open])
@@ -78,7 +76,7 @@ export default function EditModal({ item, onSuccess, index }: EditModalProps) {
     setSubmitting(true)
 
     try {
-      // CEK TEXT UPDATE (point 6)
+      // 1️⃣ Cek perubahan text
       const { updated: isTextUpdated } = isItemUpdated(item, {
         tagging: latestTagging,
         desc: latestDesc,
@@ -86,48 +84,43 @@ export default function EditModal({ item, onSuccess, index }: EditModalProps) {
         current_location: currentLocation,
       })
 
-      // CEK IMAGE UPDATE (point 6)
-      const imageChange = hasImageChanged(files, [
-        item?.img_url1,
-        item?.img_url2,
-        item?.img_url3,
-      ])
+      // 2️⃣ Cek perubahan gambar — pakai item.images
+      const originalUrls = item?.images.map(img => img.url) ?? []
+      const imageChange = hasImageChanged(files, originalUrls)
 
-      // TIDAK ADA PERUBAHAN
+      // Jika tidak ada perubahan
       if (!isTextUpdated && !imageChange.changed) {
         showToast('Peringatan', '⚠️ Tidak ada perubahan.')
         return
       }
 
-      // UPLOAD IMAGE JIKA BERUBAH
+      // 3️⃣ Upload gambar baru
       if (imageChange.changed) {
         const base64Files = await convertPickedImages(files)
 
-        const uploadRes = await uploadImage({
-          uuid: item?.uuid,
+        const payload: UploadImagePayload = {
+          uuid: item?.uuid ?? '',
           files: base64Files,
-        })
-
-        if (!uploadRes?.success) {
-          throw new Error(uploadRes?.message || 'Upload gagal')
         }
+
+        const uploadRes = await uploadImage(payload)
+        if (!uploadRes?.success) throw new Error(uploadRes?.message)
 
         resetImages()
       }
 
-      // UPDATE FIELD TEXT JIKA BERUBAH
+      // 4️⃣ Update text
       if (isTextUpdated) {
-        const res = await editItem({
-          uuid: item?.uuid,
+        const payload: EditItemPayload = {
+          uuid: item?.uuid ?? '',
           tagging: latestTagging,
           desc: latestDesc,
           original_location: originLocation,
           current_location: currentLocation,
-        })
-
-        if (!res?.success) {
-          throw new Error(res?.message || 'Update gagal')
         }
+
+        const res = await editItem(payload)
+        if (!res?.success) throw new Error(res?.message)
       }
 
       showToast('Berhasil', 'Data berhasil diperbarui.')
@@ -140,6 +133,9 @@ export default function EditModal({ item, onSuccess, index }: EditModalProps) {
     }
   }
 
+  // ============================================================
+  // RENDER UI
+  // ============================================================
   return (
     <Dialog modal open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
@@ -151,7 +147,6 @@ export default function EditModal({ item, onSuccess, index }: EditModalProps) {
 
         <Dialog.Content>
           <Dialog.Title>Edit Data</Dialog.Title>
-
           <Dialog.Description>
             Sesuaikan deskripsi atau lokasi item. Upload foto bila perlu.
           </Dialog.Description>
@@ -177,7 +172,7 @@ export default function EditModal({ item, onSuccess, index }: EditModalProps) {
               <Input flex={1} value={currentLocation} onChangeText={setCurrentLocation} />
             </Fieldset>
 
-            {/* UPLOAD GAMBAR */}
+            {/* UPLOAD IMAGE */}
             <XStack alignItems="center" mt="$2" gap="$2">
               <Label width={120}>Upload Gambar</Label>
 

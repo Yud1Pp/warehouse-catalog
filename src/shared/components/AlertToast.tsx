@@ -16,7 +16,7 @@ export const AlertToastProvider = ({ children }: { children: React.ReactNode }) 
       showToast: (title: string, message?: string, options?: { duration?: number }) => {
         toast.show(title, {
           message,
-          duration: options?.duration ?? 3000,
+          duration: options?.duration ?? 2500,
         })
       },
       hideToast: () => toast.hide(),
