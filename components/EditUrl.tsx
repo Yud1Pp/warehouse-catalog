@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link2, X } from "@tamagui/lucide-icons";
 import { Button, Dialog, Input, Label, Unspaced, XStack, YStack } from "tamagui";
-import { useAlertToast } from "components/AlertToast";
+import { useAlertToast } from "src/shared/components/AlertToast";
 
 export default function EditUrl({
   onChangeApiUrl,

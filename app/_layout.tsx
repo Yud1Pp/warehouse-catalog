@@ -5,8 +5,8 @@ import { StatusBar } from 'expo-status-bar'
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { useFonts } from 'expo-font'
 import { SplashScreen, Stack } from 'expo-router'
-import { Provider } from 'components/Provider'
-import { Theme } from 'tamagui' // ✅ Tambahkan ini untuk paksa tema Tamagui
+import { Provider } from 'src/providers/Provider'
+import { Theme } from 'tamagui'
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -37,17 +37,12 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    // ✅ Paksa React Navigation selalu pakai DefaultTheme (light)
     <ThemeProvider value={DefaultTheme}>
-      {/* ✅ Status bar hitam di atas background terang */}
-      <StatusBar style="dark" />
+      <StatusBar />
 
-      {/* ✅ Paksa Tamagui theme ke "light" */}
-      <Theme name="light">
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-        </Stack>
-      </Theme>
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+      </Stack>
     </ThemeProvider>
   )
 }

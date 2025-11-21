@@ -1,4 +1,4 @@
-import { Plus, X } from "@tamagui/lucide-icons";
+import { Plus, X } from '@tamagui/lucide-icons';
 import {
   Button,
   Dialog,
@@ -9,26 +9,26 @@ import {
   Fieldset,
   Input,
   Label,
-} from "tamagui";
-import { useState } from "react";
-import { useGudangAPI } from "hooks/useGudangAPI";
-import { useAlertToast } from "./AlertToast";
+} from 'tamagui';
+import { useState } from 'react';
+import { useGudangAPI } from 'src/modules/inventory/services/inventory.api';
+import { useAlertToast } from 'src/shared/components/AlertToast';
 
 export default function AddModal({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const { addItem, loading } = useGudangAPI();
   const { showToast } = useAlertToast();
 
-  const [tag, setTag] = useState("");
-  const [desc, setDesc] = useState("");
-  const [originalLocation, setOriginalLocation] = useState("");
-  const [currentLocation, setCurrentLocation] = useState("");
+  const [tag, setTag] = useState('');
+  const [desc, setDesc] = useState('');
+  const [originalLocation, setOriginalLocation] = useState('');
+  const [currentLocation, setCurrentLocation] = useState('');
 
   const handleSubmit = async () => {
     if (loading) return;
 
     if (!tag || !desc || !originalLocation) {
-      showToast("Peringatan", "Tag, Deskripsi, dan Original Location wajib diisi!");
+      showToast('Peringatan', 'Tag, Deskripsi, dan Original Location wajib diisi!');
       return;
     }
 
@@ -37,16 +37,16 @@ export default function AddModal({ onSuccess }: { onSuccess?: () => void }) {
         tagging: tag,
         desc,
         original_location: originalLocation,
-        current_location: currentLocation || "",
+        current_location: currentLocation || '',
       });
 
       if (result?.success) {
         setOpen(false);
         onSuccess?.();
-        setTag("");
-        setDesc("");
-        setOriginalLocation("");
-        setCurrentLocation("");
+        setTag('');
+        setDesc('');
+        setOriginalLocation('');
+        setCurrentLocation('');
       }
     } catch {}
   };
@@ -55,10 +55,10 @@ export default function AddModal({ onSuccess }: { onSuccess?: () => void }) {
     <Dialog modal open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
         <Button
-          size="$4"
+          size='$4'
           flex={1}
           onPress={() => setOpen(true)}
-          icon={<Plus size="$1" />}
+          icon={<Plus size='$1' />}
         >
           Add
         </Button>
@@ -66,17 +66,17 @@ export default function AddModal({ onSuccess }: { onSuccess?: () => void }) {
 
       <Dialog.Portal>
         <Dialog.Overlay
-          key="overlay"
-          bg="$shadow6"
-          animation="bouncy"
+          key='overlay'
+          bg='$shadow6'
+          animation='bouncy'
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
           opacity={1}
         />
 
         <Dialog.Content
-          key="content"
-          animation={["quickest", { damping: 3, mass: 0.1, stiffness: 100 }]}
+          key='content'
+          animation={['quickest', { damping: 3, mass: 0.1, stiffness: 100 }]}
           enterStyle={{ opacity: 0, scale: 0.95, y: 10 }}
           exitStyle={{ opacity: 0, scale: 0.97, y: 10 }}
           opacity={1}
@@ -84,11 +84,11 @@ export default function AddModal({ onSuccess }: { onSuccess?: () => void }) {
           y={0}
           elevate
           bordered
-          width="90%"
+          width='90%'
           maxWidth={800}
-          p="$4"
-          borderRadius="$6"
-          backgroundColor="$background"
+          p='$4'
+          borderRadius='$6'
+          backgroundColor='$background'
         >
           <Dialog.Title>
             <Text>Add Data</Text>
@@ -98,61 +98,61 @@ export default function AddModal({ onSuccess }: { onSuccess?: () => void }) {
             Isi data dengan lengkap, lalu tekan submit.
           </Dialog.Description>
 
-          <YStack gap="$2" py="$2">
-            <Fieldset horizontal alignItems="center">
-              <Label fontWeight="700" width={120}>Tag*</Label>
+          <YStack gap='$2' py='$2'>
+            <Fieldset horizontal alignItems='center'>
+              <Label fontWeight='700' width={120}>Tag*</Label>
               <Input
                 flex={1}
-                placeholder="Masukan tag"
+                placeholder='Masukan tag'
                 value={tag}
                 onChangeText={setTag}
               />
             </Fieldset>
 
-            <Fieldset horizontal alignItems="center">
-              <Label fontWeight="700" width={120}>Desc*</Label>
+            <Fieldset horizontal alignItems='center'>
+              <Label fontWeight='700' width={120}>Desc*</Label>
               <Input
                 flex={1}
-                placeholder="Masukan deskripsi"
+                placeholder='Masukan deskripsi'
                 value={desc}
                 onChangeText={setDesc}
               />
             </Fieldset>
 
-            <Fieldset horizontal alignItems="center">
-              <Label fontWeight="700" width={120}>Original Location*</Label>
+            <Fieldset horizontal alignItems='center'>
+              <Label fontWeight='700' width={120}>Original Location*</Label>
               <Input
                 flex={1}
-                placeholder="Masukan original location"
+                placeholder='Masukan original location'
                 value={originalLocation}
                 onChangeText={setOriginalLocation}
               />
             </Fieldset>
 
-            <Fieldset horizontal alignItems="center">
-              <Label fontWeight="700" width={120}>Current Location</Label>
+            <Fieldset horizontal alignItems='center'>
+              <Label fontWeight='700' width={120}>Current Location</Label>
               <Input
                 flex={1}
-                placeholder="Masukan current location (opsional)"
+                placeholder='Masukan current location (opsional)'
                 value={currentLocation}
                 onChangeText={setCurrentLocation}
               />
             </Fieldset>
           </YStack>
 
-          <Button theme="accent" mt="$3" onPress={handleSubmit} disabled={loading}>
-            {loading ? <Spinner /> : "Submit"}
+          <Button theme='accent' mt='$3' onPress={handleSubmit} disabled={loading}>
+            {loading ? <Spinner /> : 'Submit'}
           </Button>
 
           <Unspaced>
             <Button
-              bg="transparent"
-              position="absolute"
-              r="$3"
-              t="$3"
-              size="$3"
+              bg='transparent'
+              position='absolute'
+              r='$3'
+              t='$3'
+              size='$3'
               circular
-              icon={<X size="$1" />}
+              icon={<X size='$1' />}
               onPress={() => setOpen(false)}
             />
           </Unspaced>

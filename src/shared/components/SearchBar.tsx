@@ -1,6 +1,6 @@
 import { Button, Input, XStack, YStack } from 'tamagui'
 import { Search } from '@tamagui/lucide-icons'
-import EditUrl from './EditUrl'
+import EditUrl from 'components/EditUrl'
 
 export default function SearchBar(
   { 

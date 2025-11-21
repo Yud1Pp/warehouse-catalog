@@ -42,7 +42,7 @@ export default function SelectDevices({
               return
             }
           }}
-          disabled={devices.length === 0 ? false : true}
+          disabled={devices.length === 0}
         >
           <View
             style={[

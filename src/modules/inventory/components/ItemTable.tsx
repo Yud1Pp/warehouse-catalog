@@ -7,7 +7,7 @@ import {
   FlatList,
 } from "react-native"
 import { YStack, Text, Spinner, Button } from "tamagui"
-import { useEffect, useMemo } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import Items from "./Items"
 
 if (
@@ -38,11 +38,14 @@ export default function ItemTable({
 
   const listKey = useMemo(() => `grid-${numColumns}`, [numColumns])
 
-  const renderItem = ({ item, index }: { item: any; index: number }) => (
-    <YStack flex={1}>
-      <Items item={item} index={index} onRefreshPress={onRefreshPress} />
-    </YStack>
-  )
+  const renderItem = useCallback(
+    ({ item, index }: { item: any; index: number }) => (
+      <YStack flex={1}>
+        <Items item={item} index={index} onRefreshPress={onRefreshPress} />
+      </YStack>
+    ),
+    [onRefreshPress]
+  );
 
   if (loading && items.length === 0) {
     return (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { launchCamera, launchImageLibrary, Asset } from "react-native-image-picker";
-import { useAlertToast } from "components/AlertToast";
+import { useAlertToast } from "src/shared/components/AlertToast";
 
 interface PickedFile {
   uri: string;

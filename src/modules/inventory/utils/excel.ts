@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx'
 import RNFS from 'react-native-fs'
 import Share from 'react-native-share'
 import { PermissionsAndroid, Platform } from 'react-native'
-import { useAlertToast } from 'components/AlertToast'
+import { useAlertToast } from 'src/shared/components/AlertToast'
 
 interface ExportOptions {
   fileName?: string

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useAlertToast } from "components/AlertToast";
+import { useAlertToast } from "src/shared/components/AlertToast";
 
 const DEFAULT_URL = process.env.EXPO_PUBLIC_APP_SCRIPT_URL || "";
 

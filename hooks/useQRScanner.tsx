@@ -4,7 +4,7 @@ import { Dimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera'
 import { YStack, View, Text, Button } from 'tamagui'
-import { useAlertToast } from 'components/AlertToast'
+import { useAlertToast } from 'src/shared/components/AlertToast'
 
 const { width } = Dimensions.get('window')
 const scanBoxSize = width * 0.7

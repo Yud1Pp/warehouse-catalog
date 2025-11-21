@@ -17,9 +17,9 @@ import {
   Platform,
 } from 'react-native'
 import { BluetoothManager, BluetoothTscPrinter } from '@brooons/react-native-bluetooth-escpos-printer'
-import SelectDevices from './SelectDevices'
-import QRCode from 'react-native-qrcode-svg';
-import { useAlertToast } from 'components/AlertToast'
+import SelectDevices from 'src/modules/bluetooth/components/SelectDevices'
+import QRCode from 'react-native-qrcode-svg'
+import { useAlertToast } from 'src/shared/components/AlertToast'
 
 interface BTDevice {
   name: string

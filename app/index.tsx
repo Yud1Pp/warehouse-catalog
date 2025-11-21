@@ -1,13 +1,14 @@
-import AppContainer from 'components/ui/AppContainer'
-import SearchBar from 'components/SearchBar'
-import ItemTable from 'components/ItemTable'
-import BottomAppBar from 'components/BottomAppBar'
+import AppContainer from 'src/shared/ui/AppContainer'
+import SearchBar from 'src/shared/components/SearchBar'
+import { ItemTable  } from 'src/modules/inventory/components'
+import BottomAppBar from 'src/shared/components/BottomAppBar'
 import { YStack } from 'tamagui'
 import { Fragment, useEffect, useState, useCallback } from 'react'
 import { useQRScanner } from 'hooks/useQRScanner'
-import { useExcelExport } from 'hooks/useExcelExport'
-import { useGudangAPI } from 'hooks/useGudangAPI'
-import { useAlertToast } from 'components/AlertToast'
+import { useExcelExport } from 'src/modules/inventory/utils/excel'
+import { useGudangAPI } from 'src/modules/inventory/services'
+import { useAlertToast } from 'src/shared/components/AlertToast'
+import { useInventoryFilter } from "src/modules/inventory/hooks/useInventoryFilter";
 
 interface Item {
   uuid: string
@@ -22,6 +23,7 @@ interface Item {
 
 export default function Home() {
   const { showToast } = useAlertToast()
+  const { applyFilter } = useInventoryFilter();
 
   const [items, setItems] = useState<Item[]>([])
   const [filteredItems, setFilteredItems] = useState<Item[]>([])
@@ -34,26 +36,6 @@ export default function Home() {
     if (!apiUrl) return;
     handleRefresh();
   }, [apiUrl]);
-
-  // ============================================================
-  // 🔥 Search Logic - DIPISAH sebagai reusable function
-  // ============================================================
-  const applyFilter = useCallback(
-    (dataset: Item[], query: string) => {
-      const term = query.trim().toLowerCase()
-      if (!term) return dataset
-
-      return dataset.filter((item) => {
-        return (
-          item.tagging?.toLowerCase().includes(term) ||
-          item.desc?.toLowerCase().includes(term) ||
-          item.original_location?.toLowerCase().includes(term) ||
-          item.current_location?.toLowerCase().includes(term)
-        )
-      })
-    },
-    []
-  )
 
   // ============================================================
   // 🔥 Initial Load
@@ -73,9 +55,8 @@ export default function Home() {
   // 🔥 Search input changed
   // ============================================================
   const handleSearchChange = (text: string) => {
-    const query = text.trim().toLowerCase()
-    setSearchQuery(query)
-    setFilteredItems(applyFilter(items, query))
+    setSearchQuery(text)
+    setFilteredItems(applyFilter(items, text))
   }
 
   // ============================================================
